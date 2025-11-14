@@ -1,0 +1,17 @@
+bin/
+obj/
+*.user
+*.suo
+*.cache
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.git/
+.gitignore
+README.md
+*.md
+.ia/
+

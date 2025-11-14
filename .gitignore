@@ -1,0 +1,10 @@
+_brol
+
+# Fichiers d'environnement avec secrets
+.env
+.env.local
+.env.*.local
+
+
+packages/api/bin/
+packages/api/obj/

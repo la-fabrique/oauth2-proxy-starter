@@ -1,0 +1,12 @@
+{
+  "name": "oauth-starter",
+  "version": "1.0.0",
+  "description": "Low code Oauth2 containers startre kit",
+  "license": "ISC",
+  "author": "deka",
+  "type": " ",
+  "main": " ",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

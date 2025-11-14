@@ -1,0 +1,118 @@
+services:
+  db:
+    image: postgres:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    networks:
+      db: {}
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak-plugins:/opt/keycloak/providers
+      - ./keycloak-config/realms/realm-oauth-starter.json:/opt/keycloak/data/import/realm-oauth-starter.json:ro
+    environment:
+      KC_DB: ${KC_DB}
+      KC_DB_URL_HOST: ${KC_DB_URL_HOST}
+      KC_DB_URL_DATABASE: ${KC_DB_URL_DATABASE}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_DB_URL_PORT: ${KC_DB_URL_PORT}
+      KC_HOSTNAME: ${KC_HOSTNAME}
+      KC_HTTP_ENABLED: ${KC_HTTP_ENABLED}
+      KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT}
+      KC_HOSTNAME_STRICT_HTTPS: ${KC_HOSTNAME_STRICT_HTTPS}
+      # Configuration de l'utilisateur admin (fonctionne avec 'start')
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+    command: start --import-realm
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q 'HTTP/1.1' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    networks:
+      keycloak:
+        aliases:
+          - keycloak.localtest.me
+      db: {}
+      mailpit: {}
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      mailpit: {}
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      app:
+        condition: service_started
+    ports:
+      - "4180:4180"
+    volumes:
+      - ./oauth2-config/oauth2-proxy.cfg:/config/oauth2-proxy.cfg:ro
+    environment:
+      # Secrets gérés via variables d'environnement (priorité sur le fichier de config)
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+    command:
+      - --config=/config/oauth2-proxy.cfg
+      - --client-secret=${OAUTH2_PROXY_CLIENT_SECRET}
+      - --backend-logout-url=http://keycloak.localtest.me:8080/realms/oauth-starter/protocol/openid-connect/logout?id_token_hint={id_token}&post_logout_redirect_uri=http://oauth2-proxy.localtest.me:4180/oauth2/start
+    networks:
+      keycloak: {}
+      app: {}
+      oauth2-proxy: {}
+
+  app:
+    build:
+      context: ../front
+      dockerfile: Dockerfile
+    # Pas de ports exposés publiquement - accessible uniquement via oauth2-proxy
+    # Le service écoute sur le port 80 (nginx) en interne
+    networks:
+      app: {}
+
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    # Pas de ports exposés publiquement - accessible uniquement via oauth2-proxy
+    # Le service écoute sur le port 80 (Kestrel) en interne
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      app: {}
+      keycloak: {}
+
+volumes:
+  postgres_data:
+
+networks:
+  app: {}
+  keycloak: {}
+  oauth2-proxy: {}
+  db: {}
+  mailpit: {}
