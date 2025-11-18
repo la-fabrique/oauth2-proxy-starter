@@ -2,6 +2,24 @@
 
 Kit de démarrage pour une application OAuth2/OIDC avec Keycloak, oauth2-proxy, Vue.js et .NET Core API.
 
+## Get started
+
+Pour exécuter ce starter, il faut : 
+
+
+- Copier le fichier `packages/others/.env.example` vers `packages/others/.env`
+- Lancer le docker compose du dossier `packages/others`
+```bash
+docker compose up -d
+```
+- Accéder à l'app : `http://oauth2-proxy.localtest.me:4180/`
+- S'authentifier avec un des login/pass : 
+    - customer@dev.io / test
+    - customer-read@dev.io / test
+    - customer-write@dev.io / test
+    - administrator@dev.io / test
+
+
 ## Documentation
 
 La documentation du projet est disponible dans le dossier [`doc/`](doc/) :

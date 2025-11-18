@@ -817,7 +817,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "NDJepSnDfWPKJSo8cbe9bXhrB11VYvFQ",
       "redirectUris": [
         "http://oauth2-proxy.localtest.me:4180/*",
         "http://localhost:4180/oauth2/callback"
