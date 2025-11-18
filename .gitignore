@@ -8,3 +8,5 @@ _brol
 
 packages/api/bin/
 packages/api/obj/
+
+.cursor
